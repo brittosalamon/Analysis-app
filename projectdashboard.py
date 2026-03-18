@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 
 st.set_page_config(page_title="Hi Britto ❤ ^_^ ", layout="wide")
 
-# ---------------- STYLE ----------------
+
 st.markdown("""
     <style>
     .main {
@@ -16,9 +16,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
 st.title(" Student Analytics Dashboard")
 
-# ---------------- LOAD DATA ----------------
+
 file = "REEDITED STUDENT DETAILS.xlsx"
 
 sheet1 = pd.read_excel(file, sheet_name=0)
@@ -27,31 +28,45 @@ sheet2 = pd.read_excel(file, sheet_name=1)
 sheet1.columns = sheet1.columns.str.strip()
 sheet2.columns = sheet2.columns.str.strip()
 
-# ---------------- DATE FIX ----------------
+
+
+
+
 sheet2['JOD'] = pd.to_datetime(sheet2['JOD'], dayfirst=True)
 sheet2 = sheet2.sort_values('JOD')
 sheet2['MonthYear'] = sheet2['JOD'].dt.strftime('%b %Y')
 
-# ---------------- KPI ----------------
+
 total_students = len(sheet1)
-total_revenue = sheet2['Fee'].sum()
-avg_fee = sheet2['Fee'].mean()
+
+total_courses = sheet1['Course'].nunique()
+
+
+
+
+
+
+total_students = len(sheet1)
+
+total_courses = sheet1['Course'].nunique()
+
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric(" Students", total_students)
-col2.metric(" Revenue", f"₹ {total_revenue}")
-col3.metric(" Avg Fee", f"₹ {round(avg_fee,2)}")
+col1.metric("Students", total_students)
+col2.metric(" Courses", total_courses)
 
-st.divider()
 
-# ---------------- REVENUE TREND ----------------
-st.subheader(" Monthly Revenue Trend")
 
+sheet2['MonthYear'] = sheet2['JOD'].dt.to_period('M')
 rev = sheet2.groupby('MonthYear')['Fee'].sum().reset_index()
+rev['MonthYear'] = rev['MonthYear'].astype(str)
+
 
 fig1 = px.line(
-    rev, x='MonthYear', y='Fee',
+    rev,   
+    x='MonthYear',
+    y='Fee',
     markers=True,
     color_discrete_sequence=['#00FFAA']
 )
@@ -61,10 +76,25 @@ fig1.update_layout(
     paper_bgcolor="#0E1117",
     font_color="white"
 )
+fig1.update_traces(line=dict(width=3))
 
 st.plotly_chart(fig1, use_container_width=True)
 
-# ---------------- COURSE ANALYSIS ----------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 st.subheader(" Course Distribution")
 
 course_count = sheet1['Course'].value_counts().reset_index()
@@ -87,7 +117,7 @@ fig2.update_layout(
 
 st.plotly_chart(fig2, use_container_width=True)
 
-# ---------------- TRAINER ----------------
+
 if 'Trainer' in sheet1.columns:
     st.subheader("Trainer Performance")
 
@@ -111,7 +141,7 @@ if 'Trainer' in sheet1.columns:
 
     st.plotly_chart(fig3, use_container_width=True)
 
-# ---------------- TIMING ----------------
+
 if 'Timing' in sheet1.columns:
     st.subheader(" Peak Timing")
 
@@ -137,32 +167,32 @@ if 'Timing' in sheet1.columns:
 
 st.subheader(" Revenue Forecast (Smoothed)")
 
-# ---------------- PREPARE DATA ----------------
+
 sheet2['Fee'] = pd.to_numeric(sheet2['Fee'], errors='coerce')
 sheet2 = sheet2.dropna(subset=['Fee'])
 
 sheet2['JOD'] = pd.to_datetime(sheet2['JOD'], dayfirst=True)
 
-# Monthly revenue
+
 sheet2['MonthYear'] = sheet2['JOD'].dt.to_period('M')
 monthly = sheet2.groupby('MonthYear')['Fee'].sum().reset_index()
 
-# Convert to datetime for plotting
+
 monthly['MonthYear'] = monthly['MonthYear'].astype(str)
 
-# ---------------- SMOOTHING ----------------
+
 monthly['Smoothed'] = monthly['Fee'].rolling(window=2).mean()
 
-# Fill first value
+
 monthly['Smoothed'].fillna(monthly['Fee'], inplace=True)
 
-# ---------------- FORECAST ----------------
+
 last_value = monthly['Smoothed'].iloc[-1]
 
-# simple future forecast (flat + slight growth)
+
 forecast = [last_value * (1 + 0.05*i) for i in range(1,4)]
 
-# Future months
+
 import pandas as pd
 future_months = pd.period_range(
     start=pd.Period(monthly['MonthYear'].iloc[-1]) + 1,
@@ -231,12 +261,11 @@ st.write(sheet3.columns)
 
 st.subheader(" Student Type Distribution (Sheet3)")
 
-# Count values (ignore empty cells)
+
 new_count = sheet3['New Joiner'].count()
 repeat_count = sheet3['Repeated students'].count()
 ref_count = sheet3['Reference Student'].count()
 
-# Create dataframe
 import pandas as pd
 
 counts = pd.DataFrame({
@@ -244,7 +273,9 @@ counts = pd.DataFrame({
     'Count': [new_count, repeat_count, ref_count]
 })
 
-# ---------------- CHART ----------------
+
+
+
 import plotly.express as px
 
 fig = px.pie(
